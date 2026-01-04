@@ -1,0 +1,64 @@
+# -----------------------------
+# Dependencies
+# -----------------------------
+node_modules/
+.pnp
+.pnp.js
+.yarn/install-state.gz
+.yarn/cache
+.yarn/patches
+.yarn/plugins
+.yarn/releases
+.yarn/versions
+
+# -----------------------------
+# Security & SSL (QUAN TRỌNG)
+# -----------------------------
+.env
+.env.*
+!.env.example
+*.pem
+certbot/
+ssl/
+id_rsa
+id_rsa.pub
+
+# -----------------------------
+# Builds (NestJS)
+# -----------------------------
+dist/
+build/
+*.tsbuildinfo
+
+# -----------------------------
+# Logs
+# -----------------------------
+logs
+*.log
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+pnpm-debug.log*
+
+# -----------------------------
+# System & IDE
+# -----------------------------
+.DS_Store
+Thumbs.db
+.idea
+.vscode/*
+!.vscode/settings.json
+!.vscode/tasks.json
+!.vscode/launch.json
+!.vscode/extensions.json
+coverage/
+.nyc_output/
+
+# -----------------------------
+# Misc
+# -----------------------------
+/app/generated/prisma
+public/uploads/
+uploads/
+.temp
+.tmp
