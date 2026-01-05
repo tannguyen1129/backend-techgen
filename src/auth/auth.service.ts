@@ -12,37 +12,49 @@ export class AuthService implements OnModuleInit {
     private jwtService: JwtService
   ) {}
 
-  // Tự động tạo Admin mặc định khi Database rỗng
   async onModuleInit() {
-    const count = await this.adminRepo.count();
-    if (count === 0) {
-      const hashedPassword = await bcrypt.hash('7816404122KTNguyen', 10); // Mật khẩu: admin123
-      await this.adminRepo.save({ username: 'admin', password: hashedPassword }); // Tài khoản: admin
-      console.log('>>> Đã tạo tài khoản Admin mặc định: admin / admin123');
-    }
+    await this.syncUser('admin', process.env.ADMIN_DEFAULT_PASSWORD || 'admin123', 'ADMIN');
+    await this.syncUser('media', process.env.VIEWER_DEFAULT_PASSWORD || 'media123', 'VIEWER');
   }
 
-  // Bước 1: Kiểm tra username và password trong DB
+  // Hàm phụ trợ: Tự động tạo hoặc cập nhật mật khẩu user
+  private async syncUser(username: string, envPassword: string, role: string) {
+    let user = await this.adminRepo.findOne({ where: { username } });
+
+    if (!user) {
+      console.log(`>>> Đang tạo mới user: ${username} (${role})...`);
+      user = new Admin();
+      user.username = username;
+      user.role = role;
+    } else {
+      console.log(`>>> Đang cập nhật mật khẩu user: ${username} từ .env...`);
+      // Đảm bảo role đúng (phòng trường hợp db cũ chưa có role)
+      user.role = role; 
+    }
+
+    // Luôn hash và cập nhật mật khẩu mới nhất từ .env
+    user.password = await bcrypt.hash(envPassword, 10);
+    await this.adminRepo.save(user);
+    console.log(`>>> ĐÃ CẬP NHẬT THÀNH CÔNG USER: ${username}`);
+  }
+
   async validateAdmin(username: string, pass: string): Promise<any> {
     const admin = await this.adminRepo.findOne({ where: { username } });
     if (admin && (await bcrypt.compare(pass, admin.password))) {
-      const { password, ...result } = admin; // Loại bỏ password trước khi trả về
+      const { password, ...result } = admin;
       return result;
     }
     return null;
   }
 
-  // Bước 2: Tạo Access Token (Token cấp cho Frontend)
   async login(user: any) {
     const validUser = await this.validateAdmin(user.username, user.password);
-    
-    if (!validUser) {
-        return null;
-    }
-    
-    const payload = { username: validUser.username, sub: validUser.id };
+    if (!validUser) return null;
+
+    const payload = { username: validUser.username, sub: validUser.id, role: validUser.role };
     return {
-      access_token: this.jwtService.sign(payload), // Dùng secret key trong .env để mã hóa
+      access_token: this.jwtService.sign(payload),
+      role: validUser.role,
     };
   }
 }

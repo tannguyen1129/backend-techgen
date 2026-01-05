@@ -53,22 +53,56 @@ export class CandidatesService {
     return await this.candidateRepo.save(data);
   }
 
-  async findAll(page: number, limit: number, table: string, status: string) {
-    const query = this.candidateRepo.createQueryBuilder('c');
-    
-    // Lọc theo Bảng
-    if (table !== 'ALL') query.andWhere('c.table = :table', { table });
-    
-    // --- THÊM: Lọc theo Trạng thái ---
-    if (status !== 'ALL') query.andWhere('c.status = :status', { status });
-    // --------------------------------
+  // Sửa hàm findAll như sau:
+async findAll(
+  page: number, 
+  limit: number, 
+  table?: string, 
+  status?: string, 
+  fromDate?: string, 
+  toDate?: string
+) {
+  const query = this.candidateRepo.createQueryBuilder('candidate');
 
-    query.orderBy('c.createdAt', 'DESC');
-    query.skip((page - 1) * limit).take(limit);
-
-    const [candidates, total] = await query.getManyAndCount();
-    return { candidates, totalItems: total, totalPages: Math.ceil(total / limit) };
+  // Lọc theo Bảng
+  if (table && table !== 'ALL') {
+    query.andWhere('candidate.table = :table', { table });
   }
+
+  // Lọc theo Trạng thái
+  if (status && status !== 'ALL') {
+    query.andWhere('candidate.status = :status', { status });
+  }
+
+  // --- LỌC THEO NGÀY (MỚI) ---
+  if (fromDate) {
+    // Lấy từ 00:00:00 của ngày bắt đầu
+    const start = new Date(fromDate);
+    start.setHours(0, 0, 0, 0); 
+    query.andWhere('candidate.createdAt >= :start', { start });
+  }
+
+  if (toDate) {
+    // Lấy đến 23:59:59 của ngày kết thúc
+    const end = new Date(toDate);
+    end.setHours(23, 59, 59, 999);
+    query.andWhere('candidate.createdAt <= :end', { end });
+  }
+  // ---------------------------
+
+  query.orderBy('candidate.createdAt', 'DESC');
+  query.skip((page - 1) * limit);
+  query.take(limit);
+
+  const [candidates, total] = await query.getManyAndCount();
+
+  return {
+    candidates,
+    totalItems: total,
+    totalPages: Math.ceil(total / limit),
+    currentPage: page,
+  };
+}
 
 
   

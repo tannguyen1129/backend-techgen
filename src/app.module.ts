@@ -4,13 +4,13 @@ import { ServeStaticModule } from '@nestjs/serve-static';
 import { join } from 'path';
 import { ConfigModule } from '@nestjs/config';
 
-// 1. IMPORT CÁC MODULE CON
+// Import Modules
 import { CandidatesModule } from './candidates/candidates.module';
-import { AuthModule } from './auth/auth.module';        
+import { AuthModule } from './auth/auth.module';
 import { ContactsModule } from './contacts/contacts.module';
-import { AnnouncementsModule } from './announcements/announcements.module'; // <--- IMPORT MODULE NÀY (QUAN TRỌNG)
+import { AnnouncementsModule } from './announcements/announcements.module';
 
-// 2. IMPORT CÁC ENTITY
+// Import Entities
 import { Candidate } from './candidates/entities/candidate.entity';
 import { Admin } from './auth/entities/admin.entity';
 import { Contact } from './contacts/entities/contact.entity';
@@ -18,32 +18,31 @@ import { Announcement } from './announcements/entities/announcement.entity';
 
 @Module({
   imports: [
-    ConfigModule.forRoot({ isGlobal: true }),
-    
-    // Kết nối Database
+    ConfigModule.forRoot({ isGlobal: true }), // Đọc file .env
+
+    // 1. Kết nối Database dùng biến môi trường
     TypeOrmModule.forRoot({
       type: 'postgres',
-      host: 'localhost',
-      port: 5432,
-      username: 'admin',
-      password: 'admin123',
-      database: 'umt_techgen_db', 
-      // 3. THÊM Announcement VÀO DANH SÁCH ENTITY
-      entities: [Candidate, Admin, Contact, Announcement], 
-      synchronize: true,
+      host: process.env.DB_HOST || 'localhost',
+      port: parseInt(process.env.DB_PORT || '5432'),
+      username: process.env.DB_USERNAME || 'postgres',
+      password: process.env.DB_PASSWORD,
+      database: process.env.DB_NAME,
+      entities: [Candidate, Admin, Contact, Announcement],
+      // CHỈ BẬT synchronize: true Ở MÔI TRƯỜNG DEV
+      synchronize: process.env.NODE_ENV !== 'production', 
     }),
 
-    // Phục vụ ảnh upload
+    // 2. Sửa đường dẫn file tĩnh (Dùng process.cwd() để lấy thư mục gốc hiện tại)
     ServeStaticModule.forRoot({
-      // SỬA LẠI ĐƯỜNG DẪN TUYỆT ĐỐI CHO KHỚP VỚI CONTROLLER
-      rootPath: '/home/sotubuadm/web-techgen/umt-backend/uploads', 
+      rootPath: join(process.cwd(), 'uploads'), 
       serveRoot: '/uploads',
     }),
-    // 4. ĐĂNG KÝ CÁC MODULE TẠI ĐÂY
+
     CandidatesModule,
-    AuthModule,    
+    AuthModule,
     ContactsModule,
-    AnnouncementsModule, // <--- PHẢI LÀ MODULE, KHÔNG PHẢI ENTITY
+    AnnouncementsModule,
   ],
 })
 export class AppModule {}

@@ -2,11 +2,12 @@ import { Controller, Get, Post, Body, Param, Put, Delete, Query, UseInterceptors
 import { CandidatesService } from './candidates.service';
 import { FileFieldsInterceptor } from '@nestjs/platform-express';
 import { diskStorage } from 'multer';
-import { extname } from 'path';
+import { extname, join } from 'path';
 
 // Cấu hình lưu ảnh vào thư mục uploads
 const storage = diskStorage({
-  destination: '/home/sotubuadm/web-techgen/umt-backend/uploads', 
+  // Sử dụng process.cwd() để trỏ đúng về thư mục dự án hiện tại
+  destination: join(process.cwd(), 'uploads'), 
   filename: (req, file, cb) => {
     const uniqueSuffix = Date.now() + '-' + Math.round(Math.random() * 1e9);
     cb(null, file.fieldname + '-' + uniqueSuffix + extname(file.originalname));
@@ -67,14 +68,23 @@ export class CandidatesController {
   }
 
   @Get()
-  findAll(@Query() query: any) {
-    const page = Number(query.page) || 1;
-    const limit = Number(query.limit) || 10;
-    const table = query.table || 'ALL';
-    const status = query.status || 'ALL'; // <--- Thêm dòng này
-    
-    return this.candidatesService.findAll(page, limit, table, status);
-  }
+findAll(
+  @Query('page') page: string,
+  @Query('limit') limit: string,
+  @Query('table') table: string,
+  @Query('status') status: string,
+  @Query('fromDate') fromDate: string, // <-- Thêm
+  @Query('toDate') toDate: string,     // <-- Thêm
+) {
+  return this.candidatesService.findAll(
+    +page || 1, 
+    +limit || 10, 
+    table, 
+    status, 
+    fromDate, 
+    toDate
+  );
+}
 
   // 4. API Cập nhật trạng thái (Thêm body note)
   @Put(':id/status')

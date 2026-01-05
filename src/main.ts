@@ -13,8 +13,16 @@ async function bootstrap() {
   app.use(urlencoded({ extended: true, limit: '50mb' }));
 
   // 4. Bật CORS để Frontend gọi được
-  app.enableCors();
+  app.enableCors({
+    origin: process.env.NODE_ENV === 'production' 
+      ? ['https://techgen.umt.edu.vn', 'http://localhost:3000'] // Danh sách domain được phép gọi API
+      : true, // Dev thì cho phép tất cả
+    methods: 'GET,HEAD,PUT,PATCH,POST,DELETE',
+    credentials: true,
+  });
   
-  await app.listen(4000);
+  await app.listen(process.env.PORT || 4000, '0.0.0.0');
+  
+  console.log(`Application is running on: ${await app.getUrl()}`);
 }
 bootstrap();
