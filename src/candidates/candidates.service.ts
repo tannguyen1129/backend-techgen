@@ -1,13 +1,15 @@
-import { Injectable, HttpException, HttpStatus } from '@nestjs/common';
+import { Injectable, HttpException, HttpStatus, NotFoundException } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { Candidate } from './entities/candidate.entity';
+import { MailService } from 'src/mail/mail.service';
 
 @Injectable()
 export class CandidatesService {
   constructor(
     @InjectRepository(Candidate)
     private candidateRepo: Repository<Candidate>,
+    private mailService: MailService,
   ) {}
 
   async create(data: any) {
@@ -25,7 +27,7 @@ export class CandidatesService {
             name: "Vòng Sơ loại 2",
             // Lưu ý: Đuôi +07:00 để khẳng định đây là giờ Việt Nam
             start: new Date('2025-12-04T14:15:00+07:00'), 
-            end:   new Date('2026-01-15T23:59:59+07:00')
+            end:   new Date('2026-01-31T23:59:59+07:00')
         },
     ];
 
@@ -104,14 +106,50 @@ async findAll(
   };
 }
 
+async findOne(id: string): Promise<Candidate> {
+    const candidate = await this.candidateRepo.findOne({ where: { id } });
+    if (!candidate) {
+      throw new NotFoundException(`Không tìm thấy thí sinh với ID: ${id}`);
+    }
+    return candidate;
+  }
+
 
   
   // Cập nhật hàm updateStatus để lưu thêm note
-  async updateStatus(id: string, status?: string, note?: string) {
-    const updateData: any = {};
-    if (status) updateData.status = status;
-    if (note !== undefined) updateData.note = note;
-    return await this.candidateRepo.update(id, updateData);
+async updateStatus(id: string, status: string, note?: string) {
+    const candidate = await this.findOne(id);
+    if (!candidate) throw new NotFoundException('Candidate not found');
+
+    candidate.status = status;
+    if (note) candidate.note = note;
+    
+    const result = await this.candidateRepo.save(candidate);
+
+    // --- LOGIC GỬI MAIL TỰ ĐỘNG ---
+    if (status === 'APPROVED') {
+        try {
+            console.log(`>>> Đang gửi mail duyệt cho: ${result.email}`);
+            await this.mailService.sendUserConfirmation(result);
+            console.log(`>>> Gửi mail thành công!`);
+        } catch (e) {
+            console.error('>>> LỖI GỬI MAIL:', e.message);
+            // Không throw error để tránh rollback việc duyệt hồ sơ
+        }
+    }
+
+    return result;
+  }
+
+  async sendManualEmail(id: string, message: string) {
+    const candidate = await this.findOne(id);
+    try {
+        await this.mailService.sendCustomNote(candidate, message);
+        return { success: true };
+    } catch (e) {
+        console.error(e);
+        return { success: false, message: e.message };
+    }
 }
 
   // --- THÊM HÀM NÀY ---

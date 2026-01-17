@@ -1,4 +1,4 @@
-import { Controller, Get, Post, Body, Param, Put, Delete, Query, UseInterceptors, UploadedFiles, HttpException, HttpStatus } from '@nestjs/common';
+import { Controller, Get, Post, Body, Param, Put, Delete, Query, UseInterceptors, UploadedFiles, HttpException, HttpStatus, NotFoundException } from '@nestjs/common';
 import { CandidatesService } from './candidates.service';
 import { FileFieldsInterceptor } from '@nestjs/platform-express';
 import { diskStorage } from 'multer';
@@ -104,4 +104,18 @@ findAll(
   remove(@Param('id') id: string) {
     return this.candidatesService.remove(id);
   }
+
+  @Post(':id/send-email')
+async sendEmailToCandidate(@Param('id') id: string, @Body() body: { message: string }) {
+    const candidate = await this.candidatesService.findOne(id);
+    if (!candidate) throw new NotFoundException();
+    
+    // Bạn cần sửa CandidatesService để expose hàm sendCustomNote hoặc inject MailService vào Controller
+    // Cách nhanh nhất là inject MailService trực tiếp vào Controller:
+    // constructor(private readonly candidatesService: CandidatesService, private mailService: MailService) {}
+    
+    // Tuy nhiên, để đúng chuẩn, hãy thêm hàm sendNote vào CandidatesService:
+    return this.candidatesService.sendManualEmail(id, body.message);
+}
+
 }

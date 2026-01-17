@@ -8,14 +8,26 @@ export class Announcement {
   @Column()
   title: string;
 
+  // --- CÁC TRƯỜNG CŨ CỦA BẠN ---
   @Column()
   type: string; // 'NEWS' hoặc 'RESULT'
 
-  @Column({ type: 'text' }) // Lưu đoạn tóm tắt ngắn
+  @Column({ type: 'text' }) 
   summary: string;
 
-  @Column({ type: 'text' }) // Lưu nội dung chính (HTML)
+  @Column({ type: 'text' }) 
   content: string;
+  // -----------------------------
+
+  // --- CÁC TRƯỜNG MỚI CHO FILE UPLOAD ---
+  @Column({ nullable: true })
+  filePath: string;
+
+  @Column({ nullable: true })
+  fileName: string;
+
+  @Column({ default: true }) // Mình thêm trường này để ẩn/hiện bài viết nếu cần
+  isVisible: boolean;
 
   @CreateDateColumn()
   createdAt: Date;

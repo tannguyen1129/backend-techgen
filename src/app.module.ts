@@ -9,6 +9,7 @@ import { CandidatesModule } from './candidates/candidates.module';
 import { AuthModule } from './auth/auth.module';
 import { ContactsModule } from './contacts/contacts.module';
 import { AnnouncementsModule } from './announcements/announcements.module';
+import { MailModule } from './mail/mail.module';
 
 // Import Entities
 import { Candidate } from './candidates/entities/candidate.entity';
@@ -43,6 +44,7 @@ import { Announcement } from './announcements/entities/announcement.entity';
     AuthModule,
     ContactsModule,
     AnnouncementsModule,
+    MailModule,
   ],
 })
 export class AppModule {}
